@@ -1,0 +1,83 @@
+---
+title: "PPI_nAChR"
+author: "Kate_bio"
+date: '29 січня 2019 р '
+output: html_document
+---
+I study whether a mitochondrial nicotinic acetylcholine receptor (nAChR) can contact wiwth Bax protein. 
+Previously, I've built the model of interaction of Bax protein and alpha7 nAChR using pyDockWEb (https://life.bsc.es/pid/pydockweb/). These predictive models showed that the receptor may interact with Bax in transmembrane domain that fit data from other papers.
+Bax- PDB ID: 1F16
+nACHR -PDB ID: 2BG9
+
+```{r include=FALSE}
+#download libraries
+
+package_download <- function (package){
+  new_package<- package[!(package %in% installed.packages()[,"Package"])]
+  if (length (new_package))
+    install.packages(new_package, dependencies = TRUE)
+  sapply(package, require, character.only = TRUE)
+}
+
+packages <- c("colorspace", "dplyr", "seqinr", "bio3d", "stringi", "expss", "ggplot2")
+package_download(packages)
+
+```
+
+```{r}
+# Dictionary
+
+neutral_aa<- c("G", "A", "V", "L", "I", "M", "F", "W", "P")
+polar_aa<- c("S", "T", "C", "Y", "N", "Q")
+negative_aa<- c("D", "E")
+positive_aa<- c("K", "H", "R")
+
+
+```
+
+
+```{r}
+#Download protein sequences for analysis
+getwd()
+bax<- read.fasta(file = "1pq0.fasta.txt", seqtype = "AA")
+nicr<- read.fasta(file = "2bg9.fasta.txt", seqtype = "AA")
+bax_seq<- bax$`1PQ0:A|PDBID|CHAIN|SEQUENCE`
+nicrA<- nicr$`2BG9:A|PDBID|CHAIN|SEQUENCE`
+
+## Check the protein, comparing with UniProt database
+bax_uni<- get.seq("Q07812")
+bax_uni<- as.SeqFastaAA(bax_uni$ali)
+sum(bax_uni == bax_seq) #how many aas are identical
+```
+
+
+```{r}
+#Inspect the protein sequence
+
+
+
+count_aa<- function(protein, list_aa){
+  return(length(which(protein %in% list_aa)))  ## if needed, convert tree-letter coding of AA in one-letter                                                      coding using function seniqr:a()
+}
+
+table_aa<- function(protein){
+  nt<- count_aa(protein, neutral_aa)
+  pl<- count_aa(protein, polar_aa)
+  ng<- count_aa(protein, negative_aa)
+  ps<- count_aa(protein, positive_aa)
+  total<- getLength(protein)
+  df<- data.frame("Type of AAs" = c("Neutral", "Polar", "Negative", "Positive", "TOTAL"), "Numbers of AAs in Seq" = c(nt, pl, ng, ps, total))
+  return (df)
+}
+
+df_bax<- table_aa(bax_seq) #distribution of different types of AAs in proteins 
+df_nicrA<- table_aa(nicrA)
+ggplot(df_bax, aes(Type.of.AAs,Numbers.of.AAs.in.Seq))+
+    geom_col()
+
+ggplot(df_nicrA, aes(Type.of.AAs,Numbers.of.AAs.in.Seq))+
+    geom_col()
+##Not finished! 
+
+```
+
